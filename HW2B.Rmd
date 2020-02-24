@@ -1,0 +1,243 @@
+---
+title: "HW2B"
+output: rmarkdown::github_document
+---
+# Choose three functions 
+
+```{r}
+
+F1<-function(x){
+  return(c(cos(x)-x,-sin(x)))
+}
+
+F2<-function(x){
+  return(c(log(x)-exp(-x),1/x+exp(-x)))
+}
+
+#one more function to check the accuracy
+
+F3<-function(x){
+  return(c(x^12-x^8+x^5,12*(x^11)-8*(x^7)+5*(x^4)))
+}
+
+```
+
+# Define the function of Newton-Raphson
+
+```{r }
+
+NewtonRaphson<-function(func,StartingValue,Tolerance,MaxNumberOfIterations){
+  
+  i<-0  # something to count the iterations
+  x<- StartingValue  # start the algorithm at the complex number 'StartingValue'
+  y<- func(x)[1] #define y
+  d<- func(x)[2] 
+  #Deviation=abs(func(StartingValue)[1])   # Work out how far away from (0,0) func(NewZ) is.
+  Deviation<-abs(func(x)[1])
+  
+  X<-c()
+  Y<-c()
+  D<-c()
+  X[1]<-x
+  Y[1]<-func(x)[1]
+  D[1]<-func(x)[2]
+  #Set up a while loop until we hit the required target accuracy or the max. number of steps
+  while ((i<MaxNumberOfIterations)&&(Deviation>Tolerance))
+  {
+    
+  # Remember, this is is a vector of two elements. Z[1] is the is the value of the function; Z[2] is its derivative
+    
+    Z<-c()
+    Z[1]<-func(x)[1]
+    Z[2]<-func(x)[2]
+    if ((Z[1]=="NaN")||(Z[2]=="NaN")){
+      cat("Function or derivative not defined error.")
+      break
+    }
+    
+    # So we need to calculate the next value of y using this formula Z(n+1) <- Z(n)-f(Z(n))/f'(z(n))
+    
+    x<- x-Z[1]/Z[2]
+    y<- func(x)[1]
+    
+    # calculate how far f(x) is from 0
+    Deviation <- abs(func(x)[1]-0)
+    
+    #updata new value of X,Y,D
+    i<-i+1
+    X[i+1]<-x
+    Y[i+1]<-y
+    D[i+1]<-d
+    
+    #output the value of x,y
+    cat(paste("\nIteration ",i,":   X=",x,"  Y=",y))
+  }
+  
+  # output the result
+  if (Deviation<Tolerance){
+    cat(paste("\nFound the root point: ",x, " after ", i, "iterations"))
+  }else{
+    cat(paste("\nConvergence failure. Deviation: ",Deviation, "after ", i, 	"iterations"))
+  } 
+  
+  A<-cbind(X,Y,D)
+  return(A)
+}
+
+```
+
+#Plot curve 
+
+```{r}
+
+#F1
+A <- NewtonRaphson(F1,10,0.001,200) 
+
+curve(cos(x)-x, xlim=c(-2, 2),ylim=c(-2,2), main="NewtonRaphson F1=cos(x)-x")
+abline(h=0,lty=2,col='red')
+abline(v=0,lty=2,col='red')
+
+for (i in 1:(length(A[,1])-1)){
+  segments(A[i,1],0,A[i,1],A[i,2],lty=2,col="blue") 
+  segments(A[i,1],A[i,2],A[i+1,1],0,lty=2,col="blue")
+}
+
+#F2
+
+curve(log(x)-exp(-x), xlim=c(-0.25, 1.5), ylim=c(-1,0.25),main="NewtonRaphson F2=log(x)-exp(-x)")
+A <- NewtonRaphson(F2,1,0.0001,200)
+abline(h=0,lty=2,col='red')
+abline(v=0,lty=2,col='red')
+
+for (i in 1:(length(A[,1])-1)){
+  segments(A[i,1],0,A[i,1],A[i,2],lty=2,col="blue") 
+  segments(A[i,1],A[i,2],A[i+1,1],0,lty=2,col="blue")
+}
+
+#F3
+
+curve(x^12-x^8+x^5, xlim=c(-5, 10), main="NewtonRaphson F3=x^12-x^8+x^5")
+
+A<-NewtonRaphson(F3,10,0.0001,40)
+
+abline(h=0,lty=2,col='red')
+abline(v=0,lty=2,col='red')
+
+for (i in 1:(length(A[,1])-1)){
+  segments(A[i,1],0,A[i,1],A[i,2],lty=2,col="blue") 
+  segments(A[i,1],A[i,2],A[i+1,1],0,lty=2,col="blue")
+}
+
+```
+
+#Define the function of Secant
+
+```{r}
+Secant<-function(func,StartingValue,Tolerance,MaxNumberOfIterations){
+  i<-0
+  Deviation<-1000
+  x0<-StartingValue[1]
+  x1<-StartingValue[2]
+  y0<-func(x0)[1]
+  y1<-func(x1)[1]
+  d0<-func(x0)[2]
+  d1<-func(x1)[2]
+  X<-c()
+  Y<-c()
+  D<-c()
+  X[1]<-x0
+  X[2]<-x1
+  Y[1]<-y0
+  Y[2]<-y1
+  D[1]<-d0
+  D[2]<-d1
+              
+  while ((i<MaxNumberOfIterations)&&(Deviation>Tolerance))
+  {
+    # Find the next Fx-value using Newton-Raphson's formula
+    
+    if ((y0=="NaN")||(y1=="NaN")){
+      cat("Function or derivative not defined error.")
+      break
+    }
+   
+    # Calculate the next x0,x1 value
+    x<-x1-y1*(x1-x0)/(y1-y0)
+    y<-func(x)[1]
+    d<-func(x)[2]
+
+    x0<-x1
+    y0<-func(x0)[1]
+    d0<-func(x0)[2]
+    x1<-x
+    y1<-func(x1)[1]
+    d1<-func(x1)[2]
+    
+    # calculate how far y is from 0
+    Deviation=abs(y)
+    
+    i<-i+1
+    X[i+2]<-x
+    Y[i+2]<-y
+    D[i+2]<-d
+    
+    #cat(paste("\nIteration ",i,":   X=",x1,"  Devn=",Deviation,"))
+  }
+  # output the result
+  if (Deviation<Tolerance){
+    cat(paste("\nFound the root point: ",x, " after ", i, "iterations"))
+  }else{
+    cat(paste("\nConvergence failure. Deviation: ",Deviation, "after ", i, 	"iterations"))}  
+  
+  B=cbind(X,Y,D)
+  return(B)
+}
+
+```
+
+#Plot Curve
+
+```{r}
+#F1
+
+B<-Secant(F1,c(1,2),0.0001,100)
+curve(cos(x)-x, xlim=c(0.5, 1.5),ylim=c(-2,0.25), main="Secant F1=cos(x)-x")
+abline(h=0,lty=2,col='red')
+abline(v=0,lty=2,col='red')
+
+for (i in 1:(length(B[,1])-2)){
+  segments(B[i,1],0,B[i,1],B[i,2],lty=2,col="blue") 
+  segments(B[i,1],B[i,2],B[i+1,1],B[i+1,2],lty=2,col="blue") 
+  segments(B[i+1,1],B[i+1,2],B[i+2,1],0,lty=2,col="blue") 
+}
+
+#F2
+Secant(F2,c(1,2),0.0001,100)
+curve(log(x)-exp(-x), xlim=c(-0.25, 1.5), ylim=c(-2,0.5), main="Secant F2=log(x)-exp(-x)")
+abline(h=0,lty=2,col='red')
+abline(v=0,lty=2,col='red')
+
+
+for (i in 1:(length(B[,1])-2)){
+  segments(B[i,1],0,B[i,1],B[i,2],lty=2,col="blue") 
+  segments(B[i,1],B[i,2],B[i+1,1],B[i+1,2],lty=2,col="blue") 
+  segments(B[i+1,1],B[i+1,2],B[i+2,1],0,lty=2,col="blue") 
+}
+
+#F3
+
+Secant(F3,c(1,2),0.0001,100)
+curve(x^12-x^8+x^5, xlim=c(-5, 5), main="Secant F3=x^12-x^8+x^5")
+abline(h=0,lty=2,col='red')
+abline(v=0,lty=2,col='red')
+
+for (i in 1:(length(B[,1])-2)){
+  segments(B[i,1],0,B[i,1],B[i,2],lty=2,col="blue") 
+  segments(B[i,1],B[i,2],B[i+1,1],B[i+1,2],lty=2,col="blue") 
+  segments(B[i+1,1],B[i+1,2],B[i+2,1],0,lty=2,col="blue") 
+}
+
+```
+
+#Conclusion:
+#In F2 and F3 Newton-Raphson could find the root although it takes more iterations. While in F1, I have changed the StartingValue,Tolerance and MaxNumberOfIterations for many times, the result is still faliure. Secant method could find the roots in all three functions and takes less iterations, thus this method seems more efficient. 
